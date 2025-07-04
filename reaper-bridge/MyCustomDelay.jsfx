@@ -1,0 +1,24 @@
+desc:My Custom Delay
+
+slider1:delayTime=500<0,1000,1>Delay Time (ms)
+slider2:feedback=0.7<0,1,0.01>Feedback
+slider3:wetDryMix=0.5<0,1,0.01>Wet/Dry Mix
+
+@init
+buf_size = 44100 * 2;
+buf_pos = 0;
+buffer = buf_size;
+
+@slider
+delay_samples = delayTime * srate / 1000;
+
+@sample
+buf_pos = (buf_pos + 1) % buf_size;
+buffer[buf_pos] = spl0 + feedback * (buffer[(buf_pos - delay_samples) % buf_size] || 0);
+spl0 = spl0 * (1 - wetDryMix) + buffer[buf_pos] * wetDryMix;
+spl1 = spl0;
+
+@block
+delayTime = strtod(reaper.GetExtState("MyCustomDelay", "delayTime")) || delayTime;
+feedback = strtod(reaper.GetExtState("MyCustomDelay", "feedback")) || feedback;
+wetDryMix = strtod(reaper.GetExtState("MyCustomDelay", "wetDryMix")) || wetDryMix;
