@@ -1,0 +1,40 @@
+desc: Custom Delay (React Bridge)
+
+slider1:500<0,2000,1>Time (ms)
+slider2:50<0,100,1>Feedback (%)
+slider3:50<0,100,1>Mix (%)
+
+@init
+ext_noinit = 1;
+bufferSize = 96000;
+bufferL = 0;
+bufferR = bufferSize;
+
+@block
+time_ms = ext_get_value("CustomDelay", "time", 500);
+feedback_pct = ext_get_value("CustomDelay", "feedback", 50);
+mix_pct = ext_get_value("CustomDelay", "mix", 50);
+
+slider1 = time_ms;
+slider2 = feedback_pct;
+slider3 = mix_pct;
+
+delaySamples = (time_ms / 1000) * srate;
+feedbackGain = feedback_pct / 100;
+mixWet = mix_pct / 100;
+mixDry = 1 - mixWet;
+
+@sample
+readPosL = (bufferL + ptr - delaySamples) % bufferSize;
+readPosR = (bufferR + ptr - delaySamples) % bufferSize;
+
+delayedL = bufferL[readPosL];
+delayedR = bufferR[readPosR];
+
+bufferL[ptr] = spl0 + delayedL * feedbackGain;
+bufferR[ptr] = spl1 + delayedR * feedbackGain;
+
+spl0 = spl0 * mixDry + delayedL * mixWet;
+spl1 = spl1 * mixDry + delayedR * mixWet;
+
+ptr = (ptr + 1) % bufferSize;
